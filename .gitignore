@@ -3,5 +3,3 @@ node_modules/
 app-env
 app-env-example
 lcAuth.js
-
-node_modules
