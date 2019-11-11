@@ -1,3 +1,8 @@
-# Libra Checker API
+**Express.js API**
 
-Express.js server that provides the data for the librachecker.com visitors.
+This is an Express.js server that connects the backend with the frontend: on user request, gets data from PostgreSQL and returns to the user.
+
+
+**Quick Start**
+
+Clone the repository, `npm install` and then `node index.js` to listen to requests from the Libra Checker's frontend.
