@@ -4,7 +4,6 @@ const lcOriginUrl = lcAuth.lcOriginUrl();
 const dbPassword = lcAuth.passPostgres();
 
 
-
 const { Client } = require('pg');
 
 let express = require('express');
@@ -15,14 +14,9 @@ let server = app.listen(3000, function() {});
 
 
 
-
-
-
-
 //
 // Libra Checker API Endpoints
 //
-
 
 
 
@@ -30,7 +24,6 @@ app.get('/', (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", lcOriginUrl);
   res.send('Librachecker.com API');
 });
-
 
 
 
@@ -72,7 +65,6 @@ function recentTxn(client) {
 
 
 
-
 app.get('/address_info', (req, res) => {
   const client = new Client({
     user: 'postgres',
@@ -100,16 +92,10 @@ function addressDetails(req, res, client) {
     const address = req;
     let addressBalance = 0;
   
-    const queryReceiverTotalValue = {
-      name: 'receiver-value',
-      text: 'SELECT SUM(value) FROM transactions WHERE receiver = $1 AND status != $2',
-      values: [address, 'failed'],
-    }
-  
-    const querySenderTotalValue = {
-      name: 'sender-value',
-      text: 'SELECT SUM(value) FROM transactions WHERE sender = $1 AND status != $2',
-      values: [address, 'failed'],
+    const queryBalance = {
+      name: 'address-balance',
+      text: 'SELECT balance FROM balances WHERE address = $1',
+      values: [address],
     }
   
     const queryAddressLatestTxn = {
@@ -120,33 +106,20 @@ function addressDetails(req, res, client) {
   
     client.connect();
   
-    let receiverTotalValue = 0;
-    client.query(queryReceiverTotalValue, (err, res) => {
+    // let addressBalance = 0;
+    client.query(queryBalance, (err, res) => {
       if (err) {
         console.log(err.stack);
       } else {
-        console.log('queryReceiverTotalValue');
+        console.log('queryBalance');
         
-        if (res.rows[0].sum != null) {
-          receiverTotalValue = res.rows[0].sum;
+        if (typeof(res.rows[0]) != 'undefined') {
+          if (res.rows[0].balance != null) {
+            addressBalance = res.rows[0].balance;
+          }
+          console.log(addressBalance);
         }
-        // console.log(receiverTotalValue);
-      }
-    })
-  
-    let senderTotalValue = 0;
-    client.query(querySenderTotalValue, (err, res) => {
-      if (err) {
-        console.log(err.stack);
-      } else {
-        console.log('querySenderTotalValue');
-        
-        if (res.rows[0].sum != null) {
-          senderTotalValue = res.rows[0].sum;
-        }
-        // console.log(senderTotalValue);
-  
-        addressBalance = (receiverTotalValue - senderTotalValue).toFixed(8);
+
       }
     })
   
@@ -161,7 +134,7 @@ function addressDetails(req, res, client) {
         client.end();
   
         addressLatestTxn = res.rows;
-        
+        // addressBalance = Number(addressBalance).toFixed(8);
         let resObj = { addressBalance, addressLatestTxn }
   
         resolve(resObj);
@@ -172,7 +145,6 @@ function addressDetails(req, res, client) {
   })
 
 }
-
 
 
 
@@ -230,224 +202,5 @@ function txnDetails(req, res, client) {
     })
 
   });
-  
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//
-//
-// DEMOS DEMOS DEMOS 
-//
-//
-
-// const { Pool, Client } = require('pg');
-
-// POOL
-
-// const pool = new Pool({
-//   user: 'postgres',
-//   host: 'localhost',
-//   database: 'postgres',
-//   password: dbPassword,
-//   port: 5432,
-// })
-
-// pool.query('SELECT NOW()', (err, res) => {
-//   console.log(err, res)
-//   pool.end()
-// })
-
-
-
-// CLIENT
-
-// const client = new Client({
-//   user: 'postgres',
-//   host: 'localhost',
-//   database: 'postgres',
-//   password: dbPassword,
-//   port: 5432,
-// })
-
-// client.connect()
-
-// client.query('SELECT NOW()', (err, res) => {
-//   console.log(err, res)
-//   client.end()
-// })
-
-
-
-
-//
-// DEMOS
-//
-
-
-// INSERT WITH PARAMETERS
-
-// let TxnSerialized = "XXX";
-
-// const text = 'INSERT INTO transactions(id, sender, receiver, value) VALUES($1, $2, $3, $4) RETURNING *'
-
-// let i = 15500;
-// client.connect();
-
-// while (i < 100000) {
-
-//   let id = 1 + i;
-  
-//   let values = [id, 'ea4a6d44b8b52c9333cc908e523625817b3232ed0fe9473b5e4fefb1e2f1e01e', '000000000000000000000000000000000000000000000000000000000a550c18', 99999.904564]
-
-//   // callback
-//   client.query(text, values, (err, res) => {
-//     if (err) {
-//       console.log(err.stack)
-//     } else {
-//       console.log('txn inserted');
-//       // console.log(res.rows[0])
-//     }
-//   })
-
-//   i++;
-// }
-
-// return;
-
-
-
-// GET LATEST 50 TXN
-
-// client.connect();
-
-// client.query('SELECT * FROM transactions ORDER BY id DESC LIMIT 50', (err, res) => {
-//   console.log(err, res);
-//   client.end();
-
-//   // return json, when API
-// })
-
-// return;
-
-
-
-// GET ADDRESS INFO
-
-// const address = 'ea4a6d44b8b52c9333cc908e523625817b3232ed0fe9473b5e4fefb1e2f1e01e';
-// // const address = '000000000000000000000000000000000000000000000000000000000a550c18';
-
-// let addressBalance = 0;
-
-// const queryReceiverTotalValue = {
-//   name: 'receiver-value',
-//   text: 'SELECT SUM(value) FROM transactions WHERE receiver = $1',
-//   values: [address],
-// }
-
-// const querySenderTotalValue = {
-//   name: 'sender-value',
-//   text: 'SELECT SUM(value) FROM transactions WHERE sender = $1',
-//   values: [address],
-// }
-
-// const queryAddressLatestTxn = {
-//   name: 'address-latest-txn',
-//   text: 'SELECT * FROM transactions WHERE sender = $1 OR receiver = $1 ORDER BY id DESC LIMIT 50',
-//   values: [address],
-// }
-
-// client.connect()
-
-// let receiverTotalValue = 0;
-// client.query(queryReceiverTotalValue, (err, res) => {
-//   if (err) {
-//     console.log(err.stack);
-//   } else {
-//     console.log('queryReceiverTotalValue');
-    
-//     if (res.rows[0].sum != null) {
-//       receiverTotalValue = res.rows[0].sum;
-//     }
-//     console.log(receiverTotalValue);
-//   }
-// })
-
-// let senderTotalValue = 0;
-// client.query(querySenderTotalValue, (err, res) => {
-//   if (err) {
-//     console.log(err.stack);
-//   } else {
-//     console.log('querySenderTotalValue');
-    
-//     if (res.rows[0].sum != null) {
-//       senderTotalValue = res.rows[0].sum;
-//     }
-//     console.log(senderTotalValue);
-
-//     addressBalance = (receiverTotalValue - senderTotalValue).toFixed(8);
-//   }
-// })
-
-// let addressLatestTxn = null;
-
-// client.query(queryAddressLatestTxn, (err, res) => {
-//   if (err) {
-//     console.log(err.stack);
-//   } else {
-//     console.log('queryAddressLatestTxn');
-
-//     addressLatestTxn = res.rows;
-    
-//     let resObj = { addressBalance, addressLatestTxn }
-
-//     console.log(resObj);
-
-//     // console.log(res.rows);
-//   }
-// })
-
-// return;
-
-
-
-
-
-
-// GET TXN INFO
-
-// let id = 7894;
-
-// const queryGetTxnData = {
-//   name: 'get-txn-data',
-//   text: 'SELECT * FROM transactions WHERE id = $1',
-//   values: [id],
-// }
-
-// client.connect()
-
-// client.query(queryGetTxnData, (err, res) => {
-//   if (err) {
-//     console.log(err.stack);
-//   } else {
-//     console.log('queryGetTxnData');
-//     console.log(res.rows);
-//   }
-// })
-
-
-
